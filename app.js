@@ -1,45 +1,34 @@
-/* =====================================================
-   GOPALA MEDIA - RENTAL MANAGEMENT
-   ===================================================== */
+document.addEventListener("DOMContentLoaded", function () {
 
-document.addEventListener("DOMContentLoaded", () => {
   /* =========================
      STORAGE
   ========================= */
 
-  const STORAGE = {
-    customers: "gopala_media_customers",
-    equipment: "gopala_media_equipment",
-    rentals: "gopala_media_rentals"
-  };
+  const CUSTOMER_KEY = "gopala_media_customers";
+  const EQUIPMENT_KEY = "gopala_media_equipment";
+  const RENTAL_KEY = "gopala_media_rentals";
 
-  let customers = loadData(STORAGE.customers);
-  let equipment = loadData(STORAGE.equipment);
-  let rentals = loadData(STORAGE.rentals);
+  let customers = JSON.parse(localStorage.getItem(CUSTOMER_KEY) || "[]");
+  let equipment = JSON.parse(localStorage.getItem(EQUIPMENT_KEY) || "[]");
+  let rentals = JSON.parse(localStorage.getItem(RENTAL_KEY) || "[]");
 
-  function loadData(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || [];
-    } catch {
-      return [];
-    }
+
+  /* =========================
+     BASIC HELPERS
+  ========================= */
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function makeId() {
+    return Date.now().toString() + Math.random().toString(36).slice(2);
   }
 
   function saveData() {
-    localStorage.setItem(STORAGE.customers, JSON.stringify(customers));
-    localStorage.setItem(STORAGE.equipment, JSON.stringify(equipment));
-    localStorage.setItem(STORAGE.rentals, JSON.stringify(rentals));
-  }
-
-  /* =========================
-     HELPERS
-  ========================= */
-
-  const $ = (selector) => document.querySelector(selector);
-  const $$ = (selector) => document.querySelectorAll(selector);
-
-  function id() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customers));
+    localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(equipment));
+    localStorage.setItem(RENTAL_KEY, JSON.stringify(rentals));
   }
 
   function money(value) {
@@ -48,11 +37,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function escapeHTML(value) {
     return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function today() {
+    const d = new Date();
+
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
   }
 
   function formatDate(date) {
@@ -60,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const d = new Date(date + "T00:00:00");
 
-    if (Number.isNaN(d.getTime())) return date;
+    if (isNaN(d.getTime())) return date;
 
     return d.toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -69,769 +70,1515 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function today() {
-    const d = new Date();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-
-    return `${d.getFullYear()}-${month}-${day}`;
-  }
-
   function calculateDays(start, end) {
     if (!start || !end) return 1;
 
-    const startDate = new Date(start + "T00:00:00");
-    const endDate = new Date(end + "T00:00:00");
+    const a = new Date(start + "T00:00:00");
+    const b = new Date(end + "T00:00:00");
 
-    const difference = endDate - startDate;
-    const days = Math.ceil(difference / 86400000);
+    const diff = Math.ceil((b - a) / 86400000);
 
-    return Math.max(1, days);
+    return Math.max(1, diff);
   }
 
-  function customerName(customerId) {
-    const customer = customers.find(c => c.id === customerId);
-    return customer ? customer.name : "Unknown Customer";
+  function customerName(id) {
+    const customer = customers.find(c => c.id === id);
+    return customer ? customer.name : "Unknown";
   }
 
-  function equipmentName(equipmentId) {
-    const item = equipment.find(e => e.id === equipmentId);
-    return item ? item.name : "Unknown Equipment";
+  function equipmentName(id) {
+    const item = equipment.find(e => e.id === id);
+    return item ? item.name : "Unknown";
   }
 
-  function showToast(message, type = "success") {
-    let toast = $("#toast");
 
-    if (!toast) {
-      toast = document.createElement("div");
-      toast.id = "toast";
+  /* =========================
+     TOAST
+  ========================= */
 
-      toast.style.position = "fixed";
-      toast.style.bottom = "20px";
-      toast.style.left = "50%";
-      toast.style.transform = "translateX(-50%)";
-      toast.style.padding = "12px 18px";
-      toast.style.borderRadius = "10px";
-      toast.style.color = "white";
-      toast.style.fontSize = "13px";
-      toast.style.fontWeight = "600";
-      toast.style.zIndex = "9999";
-      toast.style.boxShadow = "0 8px 25px rgba(0,0,0,.2)";
+  function toast(message, type = "success") {
 
-      document.body.appendChild(toast);
+    let box = $("gopalaToast");
+
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "gopalaToast";
+
+      box.style.position = "fixed";
+      box.style.left = "50%";
+      box.style.bottom = "25px";
+      box.style.transform = "translateX(-50%)";
+      box.style.padding = "13px 18px";
+      box.style.borderRadius = "10px";
+      box.style.color = "#fff";
+      box.style.fontWeight = "600";
+      box.style.fontSize = "14px";
+      box.style.zIndex = "99999";
+      box.style.boxShadow = "0 8px 30px rgba(0,0,0,.25)";
+
+      document.body.appendChild(box);
     }
 
-    toast.style.background =
+    box.style.background =
       type === "error" ? "#dc2626" :
       type === "warning" ? "#d97706" :
       "#16a34a";
 
-    toast.textContent = message;
-    toast.style.display = "block";
+    box.textContent = message;
+    box.style.display = "block";
 
-    clearTimeout(window.toastTimer);
+    clearTimeout(window.gopalaToastTimer);
 
-    window.toastTimer = setTimeout(() => {
-      toast.style.display = "none";
+    window.gopalaToastTimer = setTimeout(function () {
+      box.style.display = "none";
     }, 2500);
   }
+
 
   /* =========================
      NAVIGATION
   ========================= */
 
-  const navButtons = $$(".nav-btn");
-  const pages = $$(".page");
-  const topTitle = $("#topbar-title");
+  const navButtons = document.querySelectorAll(".nav-btn");
+  const pages = document.querySelectorAll(".page");
 
-  const pageTitles = {
-    dashboard: "Dashboard",
-    customers: "Customers",
-    equipment: "Equipment",
-    rentals: "Rentals",
-    payments: "Payments"
+  const pageInfo = {
+    dashboard: {
+      title: "Dashboard",
+      subtitle: "Gopala Media overview"
+    },
+    customers: {
+      title: "Customers",
+      subtitle: "Manage all your rental customers."
+    },
+    equipment: {
+      title: "Equipment",
+      subtitle: "Manage cameras, lenses, microphones and accessories."
+    },
+    rentals: {
+      title: "Rentals",
+      subtitle: "Track issued and returned equipment."
+    },
+    payments: {
+      title: "Payments",
+      subtitle: "Track paid and pending rental amounts."
+    }
   };
 
-  function openPage(pageName) {
-    pages.forEach(page => {
+  function showPage(pageName) {
+
+    pages.forEach(function (page) {
       page.classList.toggle(
         "active",
-        page.dataset.page === pageName
+        page.id === pageName
       );
     });
 
-    navButtons.forEach(button => {
+    navButtons.forEach(function (button) {
       button.classList.toggle(
         "active",
         button.dataset.page === pageName
       );
     });
 
-    if (topTitle) {
-      topTitle.textContent = pageTitles[pageName] || "Gopala Media";
+    const info = pageInfo[pageName];
+
+    if (info) {
+      if ($("pageTitle")) $("pageTitle").textContent = info.title;
+      if ($("pageSubtitle")) $("pageSubtitle").textContent = info.subtitle;
     }
 
-    closeSidebar();
+    if ($("sidebar")) {
+      $("sidebar").classList.remove("open");
+    }
   }
 
-  navButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      openPage(button.dataset.page);
+  navButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      showPage(button.dataset.page);
     });
   });
 
+  /* View All button */
+  document.querySelectorAll("[data-page]").forEach(function (button) {
+
+    if (!button.classList.contains("nav-btn")) {
+
+      button.addEventListener("click", function () {
+        const page = button.dataset.page;
+
+        if (page) {
+          showPage(page);
+        }
+      });
+
+    }
+
+  });
+
+
   /* =========================
-     MOBILE SIDEBAR
+     MOBILE MENU
   ========================= */
 
-  const sidebar = $(".sidebar");
-  const overlay = $(".sidebar-overlay");
-  const menuToggle = $(".menu-toggle");
+  if ($("menuBtn")) {
 
-  function openSidebar() {
-    if (sidebar) sidebar.classList.add("open");
-    if (overlay) overlay.classList.add("show");
+    $("menuBtn").addEventListener("click", function () {
+
+      if ($("sidebar")) {
+        $("sidebar").classList.toggle("open");
+      }
+
+    });
+
   }
 
-  function closeSidebar() {
-    if (sidebar) sidebar.classList.remove("open");
-    if (overlay) overlay.classList.remove("show");
-  }
-
-  if (menuToggle) {
-    menuToggle.addEventListener("click", openSidebar);
-  }
-
-  if (overlay) {
-    overlay.addEventListener("click", closeSidebar);
-  }
 
   /* =========================
      MODALS
   ========================= */
 
   function openModal(id) {
-    const modal = document.getElementById(id);
+
+    const modal = $(id);
 
     if (modal) {
       modal.classList.add("show");
+      modal.style.display = "flex";
     }
+
   }
 
   function closeModal(id) {
-    const modal = document.getElementById(id);
+
+    const modal = $(id);
 
     if (modal) {
       modal.classList.remove("show");
+      modal.style.display = "none";
     }
+
   }
 
-  $$(".close-modal").forEach(button => {
-    button.addEventListener("click", () => {
-      const modal = button.closest(".modal");
 
-      if (modal) {
-        modal.classList.remove("show");
-      }
+  document.querySelectorAll("[data-close]").forEach(function (button) {
+
+    button.addEventListener("click", function () {
+      closeModal(button.dataset.close);
     });
+
   });
 
-  $$(".modal").forEach(modal => {
-    modal.addEventListener("click", event => {
+
+  document.querySelectorAll(".modal").forEach(function (modal) {
+
+    modal.addEventListener("click", function (event) {
+
       if (event.target === modal) {
-        modal.classList.remove("show");
+        closeModal(modal.id);
       }
+
     });
+
   });
+
 
   /* =========================
-     QUICK ACTION BUTTONS
+     OPEN CUSTOMER MODAL
   ========================= */
 
-  $$(".open-customer-modal").forEach(button => {
-    button.addEventListener("click", () => {
-      resetCustomerForm();
-      openModal("customer-modal");
-    });
-  });
+  function openCustomerModal() {
 
-  $$(".open-equipment-modal").forEach(button => {
-    button.addEventListener("click", () => {
-      resetEquipmentForm();
-      openModal("equipment-modal");
-    });
-  });
-
-  $$(".open-rental-modal").forEach(button => {
-    button.addEventListener("click", () => {
-      resetRentalForm();
-      populateRentalDropdowns();
-      openModal("rental-modal");
-    });
-  });
-
-  /* =========================
-     CUSTOMER
-  ========================= */
-
-  const customerForm = $("#customer-form");
-
-  function resetCustomerForm() {
-    if (customerForm) customerForm.reset();
-
-    const idInput = $("#customer-id");
-
-    if (idInput) {
-      idInput.value = "";
+    if ($("customerForm")) {
+      $("customerForm").reset();
     }
+
+    openModal("customerModal");
   }
 
-  if (customerForm) {
-    customerForm.addEventListener("submit", event => {
+
+  if ($("quickCustomer")) {
+    $("quickCustomer").addEventListener(
+      "click",
+      openCustomerModal
+    );
+  }
+
+  if ($("addCustomerBtn")) {
+    $("addCustomerBtn").addEventListener(
+      "click",
+      openCustomerModal
+    );
+  }
+
+
+  /* =========================
+     ADD CUSTOMER
+  ========================= */
+
+  if ($("customerForm")) {
+
+    $("customerForm").addEventListener("submit", function (event) {
+
       event.preventDefault();
 
-      const customer = {
-        id: id(),
-        name: $("#customer-name")?.value.trim(),
-        phone: $("#customer-phone")?.value.trim(),
-        document: $("#customer-document")?.value.trim(),
-        email: $("#customer-email")?.value.trim(),
-        address: $("#customer-address")?.value.trim(),
-        createdAt: new Date().toISOString()
-      };
+      const name = $("customerName").value.trim();
+      const phone = $("customerPhone").value.trim();
 
-      if (!customer.name || !customer.phone) {
-        showToast("Name aur phone number zaroori hai.", "error");
+      if (!name || !phone) {
+        toast("Name aur phone number zaroori hai.", "error");
         return;
       }
+
+      const customer = {
+        id: makeId(),
+        name: name,
+        phone: phone,
+        document: $("customerDocument").value.trim(),
+        email: $("customerEmail").value.trim(),
+        address: $("customerAddress").value.trim(),
+        createdAt: new Date().toISOString()
+      };
 
       customers.push(customer);
 
       saveData();
-      renderAll();
+      renderEverything();
 
-      closeModal("customer-modal");
-      resetCustomerForm();
+      closeModal("customerModal");
 
-      showToast("Customer successfully add ho gaya.");
+      toast("Customer successfully add ho gaya.");
     });
+
   }
 
-  function renderCustomers(search = "") {
-    const tbody = $("#customers-table-body");
 
-    if (!tbody) return;
+  /* =========================
+     CUSTOMER TABLE
+  ========================= */
 
-    const query = search.toLowerCase().trim();
+  function renderCustomers() {
 
-    const filtered = customers.filter(customer => {
+    const table = $("customerTable");
+
+    if (!table) return;
+
+    const search =
+      ($("customerSearch")?.value || "")
+        .toLowerCase()
+        .trim();
+
+    const list = customers.filter(function (customer) {
+
       return (
-        customer.name.toLowerCase().includes(query) ||
-        customer.phone.toLowerCase().includes(query) ||
-        (customer.email || "").toLowerCase().includes(query)
+        customer.name.toLowerCase().includes(search) ||
+        customer.phone.toLowerCase().includes(search) ||
+        (customer.document || "")
+          .toLowerCase()
+          .includes(search)
       );
+
     });
 
-    if (!filtered.length) {
-      tbody.innerHTML = `
+    if (!list.length) {
+
+      table.innerHTML = `
         <tr>
-          <td colspan="6">
-            <div class="empty-state">
-              <div class="empty-state-icon">👤</div>
-              <p>No customers found.</p>
-            </div>
+          <td colspan="6" style="text-align:center;padding:30px;">
+            No customers found.
           </td>
         </tr>
       `;
+
       return;
     }
 
-    tbody.innerHTML = filtered.map(customer => {
-      const customerRentals = rentals.filter(
-        rental => rental.customerId === customer.id
-      );
+    table.innerHTML = list.map(function (customer) {
 
-      const active = customerRentals.filter(
-        rental => rental.status === "active"
-      ).length;
+      const customerRentals =
+        rentals.filter(r => r.customerId === customer.id);
+
+      const balance =
+        customerRentals.reduce(
+          (sum, r) => sum + Number(r.balance || 0),
+          0
+        );
 
       return `
         <tr>
+
           <td>
             <strong>${escapeHTML(customer.name)}</strong>
           </td>
 
           <td>${escapeHTML(customer.phone)}</td>
 
-          <td>${escapeHTML(customer.email || "-")}</td>
-
-          <td>
-            <span class="badge ${
-              active > 0 ? "badge-warning" : "badge-gray"
-            }">
-              ${active} Active
-            </span>
-          </td>
+          <td>${escapeHTML(customer.document || "-")}</td>
 
           <td>${customerRentals.length}</td>
 
+          <td>${money(balance)}</td>
+
           <td>
             <button
-              class="btn btn-danger btn-small"
+              class="secondary-btn"
               onclick="deleteCustomer('${customer.id}')"
             >
               Delete
             </button>
           </td>
+
         </tr>
       `;
+
     }).join("");
+
   }
 
-  window.deleteCustomer = function(customerId) {
-    const hasRentals = rentals.some(
-      rental => rental.customerId === customerId
-    );
 
-    if (hasRentals) {
-      showToast(
-        "Is customer ka rental history hai, delete nahi kar sakte.",
+  window.deleteCustomer = function (id) {
+
+    const hasRental =
+      rentals.some(r => r.customerId === id);
+
+    if (hasRental) {
+
+      toast(
+        "Is customer ki rental history hai, delete nahi kar sakte.",
         "warning"
       );
+
       return;
     }
 
-    if (!confirm("Kya aap is customer ko delete karna chahte ho?")) {
+    if (!confirm("Customer delete karna hai?")) {
       return;
     }
 
-    customers = customers.filter(
-      customer => customer.id !== customerId
-    );
+    customers =
+      customers.filter(c => c.id !== id);
 
     saveData();
-    renderAll();
+    renderEverything();
 
-    showToast("Customer delete ho gaya.");
+    toast("Customer delete ho gaya.");
   };
 
+
   /* =========================
-     EQUIPMENT
+     CUSTOMER SEARCH
   ========================= */
 
-  const equipmentForm = $("#equipment-form");
+  if ($("customerSearch")) {
 
-  function resetEquipmentForm() {
-    if (equipmentForm) equipmentForm.reset();
+    $("customerSearch").addEventListener(
+      "input",
+      renderCustomers
+    );
 
-    const idInput = $("#equipment-id");
+  }
 
-    if (idInput) {
-      idInput.value = "";
+
+  /* =========================
+     EQUIPMENT MODAL
+  ========================= */
+
+  function openEquipmentModal() {
+
+    if ($("equipmentForm")) {
+      $("equipmentForm").reset();
     }
+
+    if ($("equipmentQuantity")) {
+      $("equipmentQuantity").value = 1;
+    }
+
+    openModal("equipmentModal");
   }
 
-  if (equipmentForm) {
-    equipmentForm.addEventListener("submit", event => {
-      event.preventDefault();
 
-      const quantity = Number(
-        $("#equipment-quantity")?.value || 0
-      );
+  if ($("quickEquipment")) {
 
-      const item = {
-        id: id(),
-        name: $("#equipment-name")?.value.trim(),
-        category: $("#equipment-category")?.value.trim(),
-        quantity,
-        available: quantity,
-        rent: Number($("#equipment-rent")?.value || 0),
-        serial: $("#equipment-serial")?.value.trim(),
-        brand: $("#equipment-brand")?.value.trim(),
-        notes: $("#equipment-notes")?.value.trim(),
-        createdAt: new Date().toISOString()
-      };
+    $("quickEquipment").addEventListener(
+      "click",
+      openEquipmentModal
+    );
 
-      if (!item.name || quantity <= 0) {
-        showToast(
-          "Equipment name aur valid quantity daalo.",
-          "error"
-        );
-        return;
+  }
+
+  if ($("addEquipmentBtn")) {
+
+    $("addEquipmentBtn").addEventListener(
+      "click",
+      openEquipmentModal
+    );
+
+  }
+
+
+  /* =========================
+     ADD EQUIPMENT
+  ========================= */
+
+  if ($("equipmentForm")) {
+
+    $("equipmentForm").addEventListener(
+      "submit",
+      function (event) {
+
+        event.preventDefault();
+
+        const name =
+          $("equipmentName").value.trim();
+
+        const category =
+          $("equipmentCategory").value;
+
+        const quantity =
+          Number($("equipmentQuantity").value);
+
+        const rent =
+          Number($("equipmentRent").value);
+
+        if (!name || quantity <= 0) {
+
+          toast(
+            "Equipment name aur quantity sahi daalo.",
+            "error"
+          );
+
+          return;
+        }
+
+        const item = {
+
+          id: makeId(),
+
+          name: name,
+
+          category: category,
+
+          quantity: quantity,
+
+          available: quantity,
+
+          rent: rent,
+
+          serial:
+            $("equipmentSerial").value.trim(),
+
+          brand:
+            $("equipmentBrand").value.trim(),
+
+          notes:
+            $("equipmentNotes").value.trim(),
+
+          createdAt:
+            new Date().toISOString()
+
+        };
+
+        equipment.push(item);
+
+        saveData();
+        renderEverything();
+
+        closeModal("equipmentModal");
+
+        toast("Equipment successfully add ho gaya.");
+
       }
+    );
 
-      equipment.push(item);
-
-      saveData();
-      renderAll();
-
-      closeModal("equipment-modal");
-      resetEquipmentForm();
-
-      showToast("Equipment successfully add ho gaya.");
-    });
   }
 
-  function renderEquipment(search = "", category = "") {
-    const tbody = $("#equipment-table-body");
 
-    if (!tbody) return;
+  /* =========================
+     EQUIPMENT TABLE
+  ========================= */
 
-    const query = search.toLowerCase().trim();
+  function renderEquipment() {
 
-    const filtered = equipment.filter(item => {
+    const table = $("equipmentTable");
+
+    if (!table) return;
+
+    const search =
+      ($("equipmentSearch")?.value || "")
+        .toLowerCase()
+        .trim();
+
+    const filter =
+      $("equipmentFilter")?.value || "all";
+
+    const list = equipment.filter(function (item) {
+
       const matchesSearch =
-        item.name.toLowerCase().includes(query) ||
-        (item.brand || "").toLowerCase().includes(query) ||
-        (item.serial || "").toLowerCase().includes(query);
+        item.name.toLowerCase().includes(search) ||
+        (item.brand || "")
+          .toLowerCase()
+          .includes(search) ||
+        (item.serial || "")
+          .toLowerCase()
+          .includes(search);
 
       const matchesCategory =
-        !category || item.category === category;
+        filter === "all" ||
+        item.category === filter;
 
       return matchesSearch && matchesCategory;
+
     });
 
-    if (!filtered.length) {
-      tbody.innerHTML = `
+    if (!list.length) {
+
+      table.innerHTML = `
         <tr>
-          <td colspan="7">
-            <div class="empty-state">
-              <div class="empty-state-icon">📷</div>
-              <p>No equipment found.</p>
-            </div>
+          <td colspan="7" style="text-align:center;padding:30px;">
+            No equipment found.
           </td>
         </tr>
       `;
+
       return;
     }
 
-    tbody.innerHTML = filtered.map(item => {
-      let statusClass = "badge-success";
-      let statusText = "Available";
+    table.innerHTML = list.map(function (item) {
+
+      let status = "Available";
 
       if (item.available === 0) {
-        statusClass = "badge-danger";
-        statusText = "Rented Out";
+        status = "Rented Out";
       } else if (item.available < item.quantity) {
-        statusClass = "badge-warning";
-        statusText = "Partially Rented";
+        status = "Partially Rented";
       }
 
       return `
         <tr>
+
           <td>
             <strong>${escapeHTML(item.name)}</strong>
           </td>
 
-          <td>${escapeHTML(item.category || "-")}</td>
+          <td>${escapeHTML(item.category)}</td>
 
-          <td>${escapeHTML(item.brand || "-")}</td>
+          <td>${item.quantity}</td>
 
-          <td>
-            ${item.available} / ${item.quantity}
-          </td>
+          <td>${item.available}</td>
 
-          <td>${money(item.rent)}/day</td>
+          <td>${money(item.rent)}</td>
 
-          <td>
-            <span class="badge ${statusClass}">
-              ${statusText}
-            </span>
-          </td>
+          <td>${status}</td>
 
           <td>
             <button
-              class="btn btn-danger btn-small"
+              class="secondary-btn"
               onclick="deleteEquipment('${item.id}')"
             >
               Delete
             </button>
           </td>
+
         </tr>
       `;
+
     }).join("");
+
   }
 
-  window.deleteEquipment = function(equipmentId) {
-    const hasActiveRental = rentals.some(
-      rental =>
-        rental.equipmentId === equipmentId &&
-        rental.status === "active"
-    );
 
-    if (hasActiveRental) {
-      showToast(
+  window.deleteEquipment = function (id) {
+
+    const activeRental =
+      rentals.some(function (r) {
+
+        return (
+          r.equipmentId === id &&
+          r.status === "active"
+        );
+
+      });
+
+    if (activeRental) {
+
+      toast(
         "Ye equipment abhi rental par hai.",
         "warning"
       );
+
       return;
     }
 
-    if (!confirm("Kya aap is equipment ko delete karna chahte ho?")) {
+    if (!confirm("Equipment delete karna hai?")) {
       return;
     }
 
-    equipment = equipment.filter(
-      item => item.id !== equipmentId
-    );
+    equipment =
+      equipment.filter(e => e.id !== id);
 
     saveData();
-    renderAll();
+    renderEverything();
 
-    showToast("Equipment delete ho gaya.");
+    toast("Equipment delete ho gaya.");
   };
 
+
   /* =========================
-     RENTAL DROPDOWNS
+     EQUIPMENT SEARCH
   ========================= */
 
-  function populateRentalDropdowns() {
-    const customerSelect = $("#rental-customer");
-    const equipmentSelect = $("#rental-equipment");
+  if ($("equipmentSearch")) {
 
-    if (customerSelect) {
-      customerSelect.innerHTML = `
-        <option value="">Select Customer</option>
-        ${customers.map(customer => `
-          <option value="${customer.id}">
-            ${escapeHTML(customer.name)} - ${escapeHTML(customer.phone)}
-          </option>
-        `).join("")}
-      `;
-    }
+    $("equipmentSearch").addEventListener(
+      "input",
+      renderEquipment
+    );
 
-    if (equipmentSelect) {
-      const availableEquipment = equipment.filter(
-        item => item.available > 0
-      );
-
-      equipmentSelect.innerHTML = `
-        <option value="">Select Equipment</option>
-        ${availableEquipment.map(item => `
-          <option
-            value="${item.id}"
-            data-rent="${item.rent}"
-            data-available="${item.available}"
-          >
-            ${escapeHTML(item.name)} - ${item.available} available
-          </option>
-        `).join("")}
-      `;
-    }
   }
 
+  if ($("equipmentFilter")) {
+
+    $("equipmentFilter").addEventListener(
+      "change",
+      renderEquipment
+    );
+
+  }
+
+
   /* =========================
-     RENTAL FORM
+     RENTAL MODAL
   ========================= */
 
-  const rentalForm = $("#rental-form");
+  function setRentalDates() {
 
-  function resetRentalForm() {
-    if (rentalForm) {
-      rentalForm.reset();
+    if ($("rentalIssueDate")) {
+      $("rentalIssueDate").value = today();
     }
 
-    const issueDate = $("#rental-issue-date");
-    const returnDate = $("#rental-return-date");
+    if ($("rentalReturnDate")) {
 
-    if (issueDate) issueDate.value = today();
-
-    if (returnDate) {
       const d = new Date();
+
       d.setDate(d.getDate() + 1);
 
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
+      $("rentalReturnDate").value =
+        d.getFullYear() +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(d.getDate()).padStart(2, "0");
 
-      returnDate.value =
-        `${d.getFullYear()}-${month}-${day}`;
     }
 
-    updateRentalSummary();
   }
 
-  function updateRentalSummary() {
-    const equipmentSelect = $("#rental-equipment");
-    const quantityInput = $("#rental-quantity");
-    const rentInput = $("#rental-rent-day");
-    const issueInput = $("#rental-issue-date");
-    const returnInput = $("#rental-return-date");
-    const paidInput = $("#rental-paid");
 
-    if (!equipmentSelect) return;
+  function populateRentalCustomers() {
 
-    const selected =
-      equipmentSelect.options[equipmentSelect.selectedIndex];
+    const select = $("rentalCustomer");
 
-    const selectedEquipmentId = equipmentSelect.value;
+    if (!select) return;
 
-    const item = equipment.find(
-      equipmentItem => equipmentItem.id === selectedEquipmentId
-    );
+    select.innerHTML =
+      `<option value="">Select Customer</option>` +
+      customers.map(function (customer) {
 
-    const quantity = Math.max(
-      1,
-      Number(quantityInput?.value || 1)
-    );
+        return `
+          <option value="${customer.id}">
+            ${escapeHTML(customer.name)}
+            - ${escapeHTML(customer.phone)}
+          </option>
+        `;
 
-    let rentPerDay = Number(
-      rentInput?.value || 0
-    );
+      }).join("");
 
-    if (item && !rentInput?.dataset.manual) {
-      rentPerDay = Number(item.rent || 0);
-
-      if (rentInput) {
-        rentInput.value = rentPerDay;
-      }
-    }
-
-    if (
-      selected &&
-      selected.dataset.rent &&
-      !rentInput?.dataset.manual
-    ) {
-      rentPerDay = Number(selected.dataset.rent);
-
-      if (rentInput) {
-        rentInput.value = rentPerDay;
-      }
-    }
-
-    const days = calculateDays(
-      issueInput?.value,
-      returnInput?.value
-    );
-
-    const total = rentPerDay * quantity * days;
-    const paid = Number(paidInput?.value || 0);
-    const balance = Math.max(0, total - paid);
-
-    const daysElement = $("#summary-days");
-    const rentElement = $("#summary-rent");
-    const totalElement = $("#summary-total");
-    const paidElement = $("#summary-paid");
-    const balanceElement = $("#summary-balance");
-
-    if (daysElement) daysElement.textContent = days;
-    if (rentElement) rentElement.textContent = money(rentPerDay);
-    if (totalElement) totalElement.textContent = money(total);
-    if (paidElement) paidElement.textContent = money(paid);
-    if (balanceElement) balanceElement.textContent = money(balance);
   }
+
+
+  function populateRentalEquipment() {
+
+    const select = $("rentalEquipment");
+
+    if (!select) return;
+
+    const available =
+      equipment.filter(e => e.available > 0);
+
+    select.innerHTML =
+      `<option value="">Select Equipment</option>` +
+      available.map(function (item) {
+
+        return `
+          <option
+            value="${item.id}"
+            data-rate="${item.rent}"
+            data-available="${item.available}"
+          >
+            ${escapeHTML(item.name)}
+            - ${item.available} available
+          </option>
+        `;
+
+      }).join("");
+
+  }
+
+
+  function openRentalModal() {
+
+    if ($("rentalForm")) {
+      $("rentalForm").reset();
+    }
+
+    populateRentalCustomers();
+    populateRentalEquipment();
+
+    setRentalDates();
+
+    if ($("rentalQuantity")) {
+      $("rentalQuantity").value = 1;
+    }
+
+    if ($("rentalPaid")) {
+      $("rentalPaid").value = 0;
+    }
+
+    updateRentalCalculation();
+
+    openModal("rentalModal");
+  }
+
+
+  if ($("quickRental")) {
+
+    $("quickRental").addEventListener(
+      "click",
+      openRentalModal
+    );
+
+  }
+
+  if ($("dashboardRentalBtn")) {
+
+    $("dashboardRentalBtn").addEventListener(
+      "click",
+      openRentalModal
+    );
+
+  }
+
+  if ($("addRentalBtn")) {
+
+    $("addRentalBtn").addEventListener(
+      "click",
+      openRentalModal
+    );
+
+  }
+
+
+  /* =========================
+     RENTAL CALCULATION
+  ========================= */
+
+  function updateRentalCalculation() {
+
+    const equipmentId =
+      $("rentalEquipment")?.value;
+
+    const item =
+      equipment.find(e => e.id === equipmentId);
+
+    let rate = item ? Number(item.rent) : 0;
+
+    if ($("rentalRate")) {
+      $("rentalRate").value = rate;
+    }
+
+    const quantity =
+      Number($("rentalQuantity")?.value || 1);
+
+    const issue =
+      $("rentalIssueDate")?.value;
+
+    const returnDate =
+      $("rentalReturnDate")?.value;
+
+    const paid =
+      Number($("rentalPaid")?.value || 0);
+
+    const days =
+      calculateDays(issue, returnDate);
+
+    const total =
+      rate * quantity * days;
+
+    const balance =
+      Math.max(0, total - paid);
+
+    if ($("rentalTotal")) {
+      $("rentalTotal").value = total;
+    }
+
+    if ($("rentalSummaryTotal")) {
+      $("rentalSummaryTotal").textContent =
+        money(total);
+    }
+
+    if ($("rentalSummaryPaid")) {
+      $("rentalSummaryPaid").textContent =
+        money(paid);
+    }
+
+    if ($("rentalSummaryBalance")) {
+      $("rentalSummaryBalance").textContent =
+        money(balance);
+    }
+
+  }
+
 
   [
-    "#rental-equipment",
-    "#rental-quantity",
-    "#rental-rent-day",
-    "#rental-issue-date",
-    "#rental-return-date",
-    "#rental-paid"
-  ].forEach(selector => {
-    const element = $(selector);
+    "rentalEquipment",
+    "rentalQuantity",
+    "rentalIssueDate",
+    "rentalReturnDate",
+    "rentalPaid"
+  ].forEach(function (id) {
 
-    if (element) {
-      element.addEventListener("input", updateRentalSummary);
-      element.addEventListener("change", updateRentalSummary);
+    if ($(id)) {
+
+      $(id).addEventListener(
+        "input",
+        updateRentalCalculation
+      );
+
+      $(id).addEventListener(
+        "change",
+        updateRentalCalculation
+      );
+
     }
+
   });
 
-  const rentInput = $("#rental-rent-day");
 
-  if (rentInput) {
-    rentInput.addEventListener("input", () => {
-      rentInput.dataset.manual = "true";
-    });
+  /* =========================
+     CREATE RENTAL
+  ========================= */
+
+  if ($("rentalForm")) {
+
+    $("rentalForm").addEventListener(
+      "submit",
+      function (event) {
+
+        event.preventDefault();
+
+        const customerId =
+          $("rentalCustomer").value;
+
+        const equipmentId =
+          $("rentalEquipment").value;
+
+        const quantity =
+          Number($("rentalQuantity").value);
+
+        const issueDate =
+          $("rentalIssueDate").value;
+
+        const returnDate =
+          $("rentalReturnDate").value;
+
+        const paid =
+          Number($("rentalPaid").value || 0);
+
+        const item =
+          equipment.find(e => e.id === equipmentId);
+
+        if (!customerId || !equipmentId) {
+
+          toast(
+            "Customer aur equipment select karo.",
+            "error"
+          );
+
+          return;
+        }
+
+        if (!item) {
+
+          toast(
+            "Equipment nahi mila.",
+            "error"
+          );
+
+          return;
+        }
+
+        if (quantity <= 0) {
+
+          toast(
+            "Quantity sahi daalo.",
+            "error"
+          );
+
+          return;
+        }
+
+        if (quantity > item.available) {
+
+          toast(
+            "Itne equipment available nahi hain.",
+            "error"
+          );
+
+          return;
+        }
+
+        if (
+          new Date(returnDate) <
+          new Date(issueDate)
+        ) {
+
+          toast(
+            "Return date galat hai.",
+            "error"
+          );
+
+          return;
+        }
+
+        const days =
+          calculateDays(
+            issueDate,
+            returnDate
+          );
+
+        const rate =
+          Number(item.rent || 0);
+
+        const total =
+          rate * quantity * days;
+
+        if (paid > total) {
+
+          toast(
+            "Paid amount total se zyada nahi ho sakta.",
+            "error"
+          );
+
+          return;
+        }
+
+        const rental = {
+
+          id: makeId(),
+
+          customerId: customerId,
+
+          equipmentId: equipmentId,
+
+          quantity: quantity,
+
+          rate: rate,
+
+          days: days,
+
+          issueDate: issueDate,
+
+          returnDate: returnDate,
+
+          paid: paid,
+
+          total: total,
+
+          balance: total - paid,
+
+          notes:
+            $("rentalNotes").value.trim(),
+
+          status: "active",
+
+          createdAt:
+            new Date().toISOString(),
+
+          returnedAt: null
+
+        };
+
+        rentals.push(rental);
+
+        item.available -= quantity;
+
+        saveData();
+        renderEverything();
+
+        closeModal("rentalModal");
+
+        toast("Rental successfully create ho gaya.");
+
+      }
+    );
+
   }
 
-  if (rentalForm) {
-    rentalForm.addEventListener("submit", event => {
-      event.preventDefault();
 
-      const customerId = $("#rental-customer")?.value;
-      const equipmentId = $("#rental-equipment")?.value;
+  /* =========================
+     RENTAL TABLE
+  ========================= */
 
-      const quantity = Number(
-        $("#rental-quantity")?.value || 0
+  function renderRentals() {
+
+    const table = $("rentalTable");
+
+    if (!table) return;
+
+    const search =
+      ($("rentalSearch")?.value || "")
+        .toLowerCase()
+        .trim();
+
+    const status =
+      $("rentalStatusFilter")?.value || "all";
+
+    const list = rentals
+      .slice()
+      .reverse()
+      .filter(function (rental) {
+
+        const customer =
+          customerName(rental.customerId)
+            .toLowerCase();
+
+        const item =
+          equipmentName(rental.equipmentId)
+            .toLowerCase();
+
+        const matchesSearch =
+          customer.includes(search) ||
+          item.includes(search);
+
+        const matchesStatus =
+          status === "all" ||
+          rental.status === status;
+
+        return matchesSearch && matchesStatus;
+
+      });
+
+    if (!list.length) {
+
+      table.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align:center;padding:30px;">
+            No rentals found.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    table.innerHTML = list.map(function (rental) {
+
+      const statusHTML =
+        rental.status === "active"
+          ? `<span class="status active">Active</span>`
+          : `<span class="status returned">Returned</span>`;
+
+      const actionHTML =
+        rental.status === "active"
+          ? `
+            <button
+              class="primary-btn"
+              onclick="returnRental('${rental.id}')"
+            >
+              Return
+            </button>
+          `
+          : "Completed";
+
+      return `
+        <tr>
+
+          <td>
+            ${escapeHTML(customerName(rental.customerId))}
+          </td>
+
+          <td>
+            ${escapeHTML(equipmentName(rental.equipmentId))}
+          </td>
+
+          <td>${rental.quantity}</td>
+
+          <td>${formatDate(rental.issueDate)}</td>
+
+          <td>${formatDate(rental.returnDate)}</td>
+
+          <td>${money(rental.total)}</td>
+
+          <td>${money(rental.paid)}</td>
+
+          <td>${money(rental.balance)}</td>
+
+          <td>${statusHTML}</td>
+
+          <td>${actionHTML}</td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+  }
+
+
+  /* =========================
+     RETURN RENTAL
+  ========================= */
+
+  window.returnRental = function (rentalId) {
+
+    const rental =
+      rentals.find(r => r.id === rentalId);
+
+    if (!rental) return;
+
+    if (rental.status !== "active") {
+      return;
+    }
+
+    const item =
+      equipment.find(
+        e => e.id === rental.equipmentId
       );
 
-      const rentPerDay = Number(
-        $("#rental-rent-day")?.value || 0
+    if (item) {
+
+      item.available += rental.quantity;
+
+      if (item.available > item.quantity) {
+        item.available = item.quantity;
+      }
+
+    }
+
+    rental.status = "returned";
+    rental.returnedAt = new Date().toISOString();
+
+    saveData();
+    renderEverything();
+
+    toast("Equipment return ho gaya.");
+
+  };
+
+
+  /* =========================
+     RENTAL SEARCH
+  ========================= */
+
+  if ($("rentalSearch")) {
+
+    $("rentalSearch").addEventListener(
+      "input",
+      renderRentals
+    );
+
+  }
+
+  if ($("rentalStatusFilter")) {
+
+    $("rentalStatusFilter").addEventListener(
+      "change",
+      renderRentals
+    );
+
+  }
+
+
+  /* =========================
+     PAYMENT TABLE
+  ========================= */
+
+  function renderPayments() {
+
+    const table = $("paymentTable");
+
+    if (!table) return;
+
+    if (!rentals.length) {
+
+      table.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center;padding:30px;">
+            No payment records found.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    table.innerHTML =
+      rentals
+        .slice()
+        .reverse()
+        .map(function (rental) {
+
+          return `
+            <tr>
+
+              <td>
+                ${escapeHTML(
+                  customerName(rental.customerId)
+                )}
+              </td>
+
+              <td>
+                ${escapeHTML(
+                  equipmentName(rental.equipmentId)
+                )}
+              </td>
+
+              <td>${money(rental.total)}</td>
+
+              <td>${money(rental.paid)}</td>
+
+              <td>${money(rental.balance)}</td>
+
+              <td>
+                ${rental.status === "active"
+                  ? "Active"
+                  : "Returned"}
+              </td>
+
+            </tr>
+          `;
+
+        }).join("");
+
+  }
+
+
+  /* =========================
+     DASHBOARD
+  ========================= */
+
+  function renderDashboard() {
+
+    const total =
+      equipment.reduce(
+        (sum, item) =>
+          sum + Number(item.quantity || 0),
+        0
       );
 
-      const issueDate =
-        $("#rental-issue-date")?.value;
-
-      const returnDate =
-        $("#rental-return-date")?.value;
-
-      const paid = Number(
-        $("#rental-paid")?.value || 0
+    const available =
+      equipment.reduce(
+        (sum, item) =>
+          sum + Number(item.available || 0),
+        0
       );
 
-      const notes =
-        $("#rental-notes")?.value.trim() || "";
+    const rented =
+      total - available;
 
-      if (!customerId || !equipmentId) {
-        showToast(
-          "Customer aur equipment select karo.",
-          "error"
-        );
-        return;
-      }
-
-      if (quantity <= 0) {
-        showToast(
-          "Quantity valid honi chahiye.",
-          "error"
-        );
-        return;
-      }
-
-      const item = equipment.find(
-        equipmentItem => equipmentItem.id === equipmentId
+    const pending =
+      rentals.reduce(
+        (sum, rental) =>
+          sum + Number(rental.balance || 0),
+        0
       );
 
-      if (!item) {
-        showToast("Equipment nahi mila.", "error");
-        return;
-      }
+    const activeRentals =
+      rentals.filter(
+        rental => rental.status === "active"
+      ).length;
 
-      if (quantity > item.available) {
-        showToast(
-          `Sirf ${item.available} item available hain.`,
-          "error"
-        );
-        return;
-      }
+    if ($("statEquipment"))
+      $("statEquipment").textContent = total;
 
-      if (!issueDate || !returnDate) {
-        showToast(
-          "Issue aur return date select karo.",
-          "error"
-        );
-        return;
-      }
+    if ($("statAvailable"))
+      $("statAvailable").textContent = available;
 
-      if (new Date(returnDate) < new Date(issueDate)) {
-        showToast(
-          "Return date issue date se pehle nahi ho sakti.",
-          "error"
-        );
-        return;
-      }
+    if ($("statRented"))
+      $("statRented").textContent = rented;
 
-      const days = calculateDays(
-        issueDate,
-        returnDate
+    if ($("statCustomers"))
+      $("statCustomers").textContent =
+        customers.length;
+
+    if ($("statPending"))
+      $("statPending").textContent =
+        money(pending);
+
+    if ($("statRentals"))
+      $("statRentals").textContent =
+        activeRentals;
+
+    renderDashboardRentals();
+
+  }
+
+
+  function renderDashboardRentals() {
+
+    const table =
+      $("dashboardRentalTable");
+
+    if (!table) return;
+
+    const active =
+      rentals
+        .filter(r => r.status === "active")
+        .slice()
+        .reverse();
+
+    if (!active.length) {
+
+      table.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center;padding:25px;">
+            No active rentals.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    table.innerHTML =
+      active.map(function (rental) {
+
+        return `
+          <tr>
+
+            <td>
+              ${escapeHTML(
+                customerName(rental.customerId)
+              )}
+            </td>
+
+            <td>
+              ${escapeHTML(
+                equipmentName(rental.equipmentId)
+              )}
+            </td>
+
+            <td>
+              ${formatDate(rental.returnDate)}
+            </td>
+
+            <td>
+              ${money(rental.total)}
+            </td>
+
+            <td>
+              Active
+            </td>
+
+          </tr>
+        `;
+
+      }).join("");
+
+  }
+
+
+  /* =========================
+     PAYMENT TOTALS
+  ========================= */
+
+  function renderPaymentTotals() {
+
+    const collected =
+      rentals.reduce(
+        (sum, rental) =>
+          sum + Number(rental.paid || 0),
+        0
       );
 
-      const total = rentPerDay * quantity * days;
+    const pending =
+      rentals.reduce(
+        (sum, rental) =>
+          sum + Number(rental.balance || 0),
+        0
+      );
 
-      if (paid > total) {
-        showToast(
-          "Paid amount total rent se zyada nahi ho sakta.",
-          "error"
-        );
-        return;
-     
+    if ($("paymentCollected")) {
+      $("paymentCollected").textContent =
+        money(collected);
+    }
+
+    if ($("paymentPending")) {
+      $("paymentPending").textContent =
+        money(pending);
+    }
+
+  }
+
+
+  /* =========================
+     RENDER EVERYTHING
+  ========================= */
+
+  function renderEverything() {
+
+    renderDashboard();
+
+    renderCustomers();
+
+    renderEquipment();
+
+    renderRentals();
+
+    renderPayments();
+
+    renderPaymentTotals();
+
+  }
+
+
+  /* =========================
+     ESC KEY
+  ========================= */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (event.key === "Escape") {
+
+        document
+          .querySelectorAll(".modal")
+          .forEach(function (modal) {
+
+            modal.classList.remove("show");
+            modal.style.display = "none";
+
+          });
+
+        if ($("sidebar")) {
+          $("sidebar").classList.remove("open");
+        }
+
+      }
+
+    }
+  );
+
+
+  /* =========================
+     START APP
+  ========================= */
+
+  renderEverything();
+
+  console.log(
+    "Gopala Media Rental Management loaded successfully."
+  );
+
+});
