@@ -1,964 +1,927 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gopala Media | Rental Management</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Gopala Media Camera & Equipment Rental Management">
 
-:root {
-    --bg: #f5f7fb;
-    --card: #ffffff;
-    --text: #172033;
-    --muted: #718096;
-    --primary: #6c5ce7;
-    --primary-dark: #5648c7;
-    --success: #16a34a;
-    --warning: #d97706;
-    --danger: #dc2626;
-    --border: #e7eaf0;
-    --sidebar: #111827;
-}
+  <title>Gopala Media | Rental Management</title>
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-}
-
-button,
-input,
-select {
-    font: inherit;
-}
-
-button {
-    cursor: pointer;
-}
-
-/* SIDEBAR */
-
-.sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 250px;
-    background: var(--sidebar);
-    color: white;
-    padding: 24px 16px;
-    z-index: 20;
-}
-
-.logo {
-    padding: 0 12px 30px;
-}
-
-.logo h1 {
-    font-size: 22px;
-}
-
-.logo span {
-    color: #a99dfd;
-}
-
-.logo p {
-    color: #9ca3af;
-    font-size: 12px;
-    margin-top: 5px;
-}
-
-.menu {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.menu button {
-    border: none;
-    background: transparent;
-    color: #cbd5e1;
-    text-align: left;
-    padding: 13px 14px;
-    border-radius: 10px;
-    font-size: 14px;
-}
-
-.menu button:hover,
-.menu button.active {
-    background: #27243f;
-    color: white;
-}
-
-.menu-icon {
-    width: 25px;
-    display: inline-block;
-}
-
-/* MAIN */
-
-.main {
-    margin-left: 250px;
-    min-height: 100vh;
-}
-
-.topbar {
-    height: 72px;
-    background: white;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 30px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.topbar h2 {
-    font-size: 20px;
-}
-
-.shop-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--muted);
-}
-
-.status-dot {
-    width: 8px;
-    height: 8px;
-    background: #22c55e;
-    border-radius: 50%;
-}
-
-.content {
-    padding: 30px;
-}
-
-/* SECTIONS */
-
-.section {
-    display: none;
-}
-
-.section.active {
-    display: block;
-}
-
-.page-title {
-    margin-bottom: 24px;
-}
-
-.page-title h2 {
-    font-size: 25px;
-}
-
-.page-title p {
-    color: var(--muted);
-    margin-top: 5px;
-}
-
-/* DASHBOARD */
-
-.stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 18px;
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-}
-
-.stat-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.stat-label {
-    color: var(--muted);
-    font-size: 13px;
-}
-
-.stat-value {
-    font-size: 30px;
-    font-weight: 700;
-    margin-top: 12px;
-}
-
-.stat-icon {
-    width: 42px;
-    height: 42px;
-    display: grid;
-    place-items: center;
-    border-radius: 11px;
-    background: #efecff;
-    font-size: 20px;
-}
-
-/* CARDS */
-
-.card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px;
-    margin-bottom: 22px;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 18px;
-}
-
-.card-header h3 {
-    font-size: 17px;
-}
-
-/* BUTTONS */
-
-.btn {
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.btn-primary {
-    background: var(--primary);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-}
-
-.btn-secondary {
-    background: #eef0f5;
-    color: #374151;
-}
-
-.btn-success {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.btn-danger {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-/* TABLE */
-
-.table-wrapper {
-    overflow-x: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th,
-td {
-    padding: 13px 12px;
-    border-bottom: 1px solid var(--border);
-    text-align: left;
-    white-space: nowrap;
-}
-
-th {
-    font-size: 12px;
-    text-transform: uppercase;
-    color: var(--muted);
-}
-
-td {
-    font-size: 13px;
-}
-
-.empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 35px;
-}
-
-/* BADGES */
-
-.badge {
-    display: inline-block;
-    padding: 5px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.badge-green {
-    color: #166534;
-    background: #dcfce7;
-}
-
-.badge-yellow {
-    color: #92400e;
-    background: #fef3c7;
-}
-
-.badge-red {
-    color: #991b1b;
-    background: #fee2e2;
-}
-
-.badge-purple {
-    color: #5b21b6;
-    background: #ede9fe;
-}
-
-/* TOOLBAR */
-
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.search {
-    max-width: 320px;
-    width: 100%;
-}
-
-.search input {
-    width: 100%;
-    padding: 11px 13px;
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    outline: none;
-}
-
-.search input:focus {
-    border-color: var(--primary);
-}
-
-/* MODAL */
-
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, .55);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.modal.show {
-    display: flex;
-}
-
-.modal-box {
-    background: white;
-    width: 100%;
-    max-width: 650px;
-    max-height: 90vh;
-    overflow-y: auto;
-    border-radius: 15px;
-    padding: 25px;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 22px;
-}
-
-.close {
-    border: none;
-    background: transparent;
-    font-size: 25px;
-    color: #6b7280;
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-
-.form-group.full {
-    grid-column: 1 / -1;
-}
-
-.form-group label {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.form-group input,
-.form-group select {
-    padding: 11px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    outline: none;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: var(--primary);
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 22px;
-}
-
-/* QUICK GRID */
-
-.quick-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-}
-
-.quick-card {
-    padding: 20px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-}
-
-.quick-card:hover {
-    border-color: var(--primary);
-    background: #faf9ff;
-}
-
-.quick-card strong {
-    display: block;
-    margin-bottom: 7px;
-}
-
-.quick-card span {
-    color: var(--muted);
-    font-size: 12px;
-}
-
-/* MOBILE */
-
-.mobile-menu {
-    display: none;
-    border: none;
-    background: transparent;
-    font-size: 24px;
-}
-
-@media (max-width: 1000px) {
-    .stats {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .quick-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 750px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: .25s;
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .main {
-        margin-left: 0;
-    }
-
-    .mobile-menu {
-        display: block;
-    }
-
-    .topbar {
-        padding: 0 16px;
-    }
-
-    .content {
-        padding: 18px;
-    }
-
-    .stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-group.full {
-        grid-column: auto;
-    }
-
-    .toolbar {
-        flex-direction: column;
-    }
-}
-
-@media (max-width: 450px) {
-    .stats {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
+  <div id="app">
 
-<aside class="sidebar" id="sidebar">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
 
-    <div class="logo">
-        <h1>Gopala <span>Media</span></h1>
-        <p>Rental Management System</p>
-    </div>
+      <div class="brand">
+        <div class="brand-logo">GM</div>
 
-    <nav class="menu">
-        <button class="active" onclick="showSection('dashboard', this)">
-            <span class="menu-icon">⌂</span> Dashboard
+        <div>
+          <h1>Gopala Media</h1>
+          <p>Rental Management</p>
+        </div>
+      </div>
+
+      <nav class="navigation">
+
+        <button class="nav-btn active" data-page="dashboard">
+          <span>📊</span>
+          <span>Dashboard</span>
         </button>
 
-        <button onclick="showSection('customers', this)">
-            <span class="menu-icon">👤</span> Customers
+        <button class="nav-btn" data-page="customers">
+          <span>👥</span>
+          <span>Customers</span>
         </button>
 
-        <button onclick="showSection('equipment', this)">
-            <span class="menu-icon">📷</span> Equipment
+        <button class="nav-btn" data-page="equipment">
+          <span>📷</span>
+          <span>Equipment</span>
         </button>
 
-        <button onclick="showSection('rentals', this)">
-            <span class="menu-icon">📋</span> Rentals
+        <button class="nav-btn" data-page="rentals">
+          <span>📋</span>
+          <span>Rentals</span>
         </button>
 
-        <button onclick="showSection('payments', this)">
-            <span class="menu-icon">₹</span> Payments
+        <button class="nav-btn" data-page="payments">
+          <span>💰</span>
+          <span>Payments</span>
         </button>
-    </nav>
 
-</aside>
+      </nav>
 
-<!-- MAIN -->
+    </aside>
 
-<main class="main">
 
-    <header class="topbar">
-        <div style="display:flex;align-items:center;gap:15px;">
-            <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
-            <h2 id="pageTitle">Dashboard</h2>
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+
+        <button class="menu-btn" id="menuBtn">
+          ☰
+        </button>
+
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageSubtitle">Gopala Media overview</p>
         </div>
 
-        <div class="shop-status">
-            <span class="status-dot"></span>
-            Gopala Media
+        <div class="topbar-right">
+          <span class="online-dot"></span>
+          <span>Gopala Media</span>
         </div>
-    </header>
 
-    <div class="content">
+      </header>
 
-        <!-- DASHBOARD -->
 
-        <section class="section active" id="dashboard">
+      <!-- PAGE CONTENT -->
+      <div class="content">
 
-            <div class="page-title">
-                <h2>Dashboard</h2>
-                <p>Gopala Media rental business overview</p>
+
+        <!-- ================= DASHBOARD ================= -->
+
+        <section class="page active" id="dashboard">
+
+          <div class="page-heading">
+            <div>
+              <h2>Dashboard</h2>
+              <p>Welcome to Gopala Media rental management.</p>
             </div>
 
-            <div class="stats">
+            <button class="primary-btn" id="dashboardRentalBtn">
+              + New Rental
+            </button>
+          </div>
 
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div>
-                            <div class="stat-label">Total Equipment</div>
-                            <div class="stat-value" id="totalEquipment">0</div>
-                        </div>
-                        <div class="stat-icon">📷</div>
-                    </div>
-                </div>
 
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div>
-                            <div class="stat-label">Currently Rented</div>
-                            <div class="stat-value" id="rentedEquipment">0</div>
-                        </div>
-                        <div class="stat-icon">📦</div>
-                    </div>
-                </div>
+          <!-- STAT CARDS -->
 
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div>
-                            <div class="stat-label">Customers</div>
-                            <div class="stat-value" id="totalCustomers">0</div>
-                        </div>
-                        <div class="stat-icon">👥</div>
-                    </div>
-                </div>
+          <div class="stats-grid">
 
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div>
-                            <div class="stat-label">Pending Amount</div>
-                            <div class="stat-value" id="pendingAmount">₹0</div>
-                        </div>
-                        <div class="stat-icon">₹</div>
-                    </div>
-                </div>
+            <div class="stat-card">
+              <div class="stat-icon purple">📷</div>
+
+              <div>
+                <p>Total Equipment</p>
+                <h3 id="statEquipment">0</h3>
+              </div>
+            </div>
+
+
+            <div class="stat-card">
+              <div class="stat-icon blue">📦</div>
+
+              <div>
+                <p>Available</p>
+                <h3 id="statAvailable">0</h3>
+              </div>
+            </div>
+
+
+            <div class="stat-card">
+              <div class="stat-icon orange">🔄</div>
+
+              <div>
+                <p>Rented</p>
+                <h3 id="statRented">0</h3>
+              </div>
+            </div>
+
+
+            <div class="stat-card">
+              <div class="stat-icon green">👥</div>
+
+              <div>
+                <p>Customers</p>
+                <h3 id="statCustomers">0</h3>
+              </div>
+            </div>
+
+
+            <div class="stat-card">
+              <div class="stat-icon red">💰</div>
+
+              <div>
+                <p>Pending Amount</p>
+                <h3 id="statPending">₹0</h3>
+              </div>
+            </div>
+
+
+            <div class="stat-card">
+              <div class="stat-icon teal">📋</div>
+
+              <div>
+                <p>Active Rentals</p>
+                <h3 id="statRentals">0</h3>
+              </div>
+            </div>
+
+          </div>
+
+
+          <!-- QUICK ACTIONS -->
+
+          <div class="card">
+
+            <div class="card-header">
+              <div>
+                <h3>Quick Actions</h3>
+                <p>Frequently used options</p>
+              </div>
+            </div>
+
+            <div class="quick-actions">
+
+              <button class="quick-action" id="quickCustomer">
+                <span>👤</span>
+                <strong>Add Customer</strong>
+                <small>Create a new customer</small>
+              </button>
+
+              <button class="quick-action" id="quickEquipment">
+                <span>📷</span>
+                <strong>Add Equipment</strong>
+                <small>Add camera, lens, mic etc.</small>
+              </button>
+
+              <button class="quick-action" id="quickRental">
+                <span>📋</span>
+                <strong>New Rental</strong>
+                <small>Give equipment to customer</small>
+              </button>
 
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>Quick Actions</h3>
-                </div>
+          </div>
 
-                <div class="quick-grid">
 
-                    <div class="quick-card" onclick="openCustomerModal()">
-                        <strong>👤 Add Customer</strong>
-                        <span>Create a new customer record</span>
-                    </div>
+          <!-- ACTIVE RENTALS -->
 
-                    <div class="quick-card" onclick="openEquipmentModal()">
-                        <strong>📷 Add Equipment</strong>
-                        <span>Add camera, lens, mic or other item</span>
-                    </div>
+          <div class="card">
 
-                    <div class="quick-card" onclick="openRentalModal()">
-                        <strong>📋 New Rental</strong>
-                        <span>Issue equipment to a customer</span>
-                    </div>
+            <div class="card-header">
 
-                </div>
-            </div>
+              <div>
+                <h3>Active Rentals</h3>
+                <p>Currently rented equipment</p>
+              </div>
 
-            <div class="card">
-
-                <div class="card-header">
-                    <h3>Active Rentals</h3>
-                </div>
-
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Equipment</th>
-                                <th>Issue Date</th>
-                                <th>Return Date</th>
-                                <th>Status</th>
-                                <th>Balance</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="dashboardRentals"></tbody>
-                    </table>
-                </div>
+              <button class="text-btn" data-page="rentals">
+                View All →
+              </button>
 
             </div>
+
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Equipment</th>
+                    <th>Return Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody id="dashboardRentalTable"></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
 
         </section>
 
-        <!-- CUSTOMERS -->
 
-        <section class="section" id="customers">
 
-            <div class="page-title">
-                <h2>Customers</h2>
-                <p>Manage your rental customers</p>
+        <!-- ================= CUSTOMERS ================= -->
+
+        <section class="page" id="customers">
+
+          <div class="page-heading">
+
+            <div>
+              <h2>Customers</h2>
+              <p>Manage all your rental customers.</p>
             </div>
 
-            <div class="card">
+            <button class="primary-btn" id="addCustomerBtn">
+              + Add Customer
+            </button>
 
-                <div class="toolbar">
+          </div>
 
-                    <div class="search">
-                        <input
-                            type="text"
-                            id="customerSearch"
-                            placeholder="Search customer..."
-                            oninput="renderCustomers()"
-                        >
-                    </div>
 
-                    <button class="btn btn-primary" onclick="openCustomerModal()">
-                        + Add Customer
-                    </button>
+          <div class="card">
 
-                </div>
+            <div class="toolbar">
 
-                <div class="table-wrapper">
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>ID / Document</th>
-                                <th>Address</th>
-                                <th>Rentals</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="customerTable"></tbody>
-                    </table>
-
-                </div>
+              <div class="search-box">
+                🔍
+                <input
+                  type="text"
+                  id="customerSearch"
+                  placeholder="Search customer..."
+                >
+              </div>
 
             </div>
+
+
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Document</th>
+                    <th>Rentals</th>
+                    <th>Balance</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="customerTable"></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
 
         </section>
 
-        <!-- EQUIPMENT -->
 
-        <section class="section" id="equipment">
 
-            <div class="page-title">
-                <h2>Equipment</h2>
-                <p>Manage cameras, lenses, microphones and accessories</p>
+        <!-- ================= EQUIPMENT ================= -->
+
+        <section class="page" id="equipment">
+
+          <div class="page-heading">
+
+            <div>
+              <h2>Equipment</h2>
+              <p>Manage cameras, lenses, microphones and accessories.</p>
             </div>
 
-            <div class="card">
+            <button class="primary-btn" id="addEquipmentBtn">
+              + Add Equipment
+            </button>
 
-                <div class="toolbar">
+          </div>
 
-                    <div class="search">
-                        <input
-                            type="text"
-                            id="equipmentSearch"
-                            placeholder="Search equipment..."
-                            oninput="renderEquipment()"
-                        >
-                    </div>
 
-                    <button class="btn btn-primary" onclick="openEquipmentModal()">
-                        + Add Equipment
-                    </button>
+          <div class="card">
 
-                </div>
+            <div class="toolbar">
 
-                <div class="table-wrapper">
+              <div class="search-box">
+                🔍
+                <input
+                  type="text"
+                  id="equipmentSearch"
+                  placeholder="Search equipment..."
+                >
+              </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Category</th>
-                                <th>Quantity</th>
-                                <th>Available</th>
-                                <th>Rent / Day</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="equipmentTable"></tbody>
-                    </table>
-
-                </div>
+              <select id="equipmentFilter">
+                <option value="all">All Categories</option>
+                <option value="Camera">Camera</option>
+                <option value="Lens">Lens</option>
+                <option value="Mic">Mic</option>
+                <option value="Light">Light</option>
+                <option value="Tripod">Tripod</option>
+                <option value="Gimbal">Gimbal</option>
+                <option value="Accessory">Accessory</option>
+                <option value="Other">Other</option>
+              </select>
 
             </div>
+
+
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Equipment</th>
+                    <th>Category</th>
+                    <th>Total</th>
+                    <th>Available</th>
+                    <th>Rent / Day</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="equipmentTable"></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
 
         </section>
 
-        <!-- RENTALS -->
 
-        <section class="section" id="rentals">
 
-            <div class="page-title">
-                <h2>Rentals</h2>
-                <p>Track issued and returned equipment</p>
+        <!-- ================= RENTALS ================= -->
+
+        <section class="page" id="rentals">
+
+          <div class="page-heading">
+
+            <div>
+              <h2>Rentals</h2>
+              <p>Track issued and returned equipment.</p>
             </div>
 
-            <div class="card">
+            <button class="primary-btn" id="addRentalBtn">
+              + New Rental
+            </button>
 
-                <div class="toolbar">
+          </div>
 
-                    <div class="search">
-                        <input
-                            type="text"
-                            id="rentalSearch"
-                            placeholder="Search customer or equipment..."
-                            oninput="renderRentals()"
-                        >
-                    </div>
 
-                    <button class="btn btn-primary" onclick="openRentalModal()">
-                        + New Rental
-                    </button>
+          <div class="card">
 
-                </div>
+            <div class="toolbar">
 
-                <div class="table-wrapper">
+              <div class="search-box">
+                🔍
+                <input
+                  type="text"
+                  id="rentalSearch"
+                  placeholder="Search rental..."
+                >
+              </div>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Equipment</th>
-                                <th>Qty</th>
-                                <th>Issue Date</th>
-                                <th>Expected Return</th>
-                                <th>Total</th>
-                                <th>Paid</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="rentalTable"></tbody>
-                    </table>
-
-                </div>
+              <select id="rentalStatusFilter">
+                <option value="all">All Rentals</option>
+                <option value="active">Active</option>
+                <option value="returned">Returned</option>
+              </select>
 
             </div>
+
+
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Equipment</th>
+                    <th>Qty</th>
+                    <th>Issue Date</th>
+                    <th>Return Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="rentalTable"></tbody>
+
+              </table>
+
+            </div>
+
+          </div>
 
         </section>
 
-        <!-- PAYMENTS -->
 
-        <section class="section" id="payments">
 
-            <div class="page-title">
-                <h2>Payments</h2>
-                <p>Rental payment and outstanding balance</p>
+        <!-- ================= PAYMENTS ================= -->
+
+        <section class="page" id="payments">
+
+          <div class="page-heading">
+
+            <div>
+              <h2>Payments</h2>
+              <p>Track paid and pending rental amounts.</p>
             </div>
 
-            <div class="card">
+          </div>
 
-                <div class="table-wrapper">
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th>Rental</th>
-                                <th>Total</th>
-                                <th>Paid</th>
-                                <th>Balance</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
+          <div class="stats-grid payment-stats">
 
-                        <tbody id="paymentTable"></tbody>
-                    </table>
+            <div class="stat-card">
+              <div class="stat-icon green">₹</div>
 
-                </div>
+              <div>
+                <p>Total Collected</p>
+                <h3 id="paymentCollected">₹0</h3>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon red">₹</div>
+
+              <div>
+                <p>Total Pending</p>
+                <h3 id="paymentPending">₹0</h3>
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="card">
+
+            <div class="table-wrapper">
+
+              <table>
+
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Equipment</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody id="paymentTable"></tbody>
+
+              </table>
 
             </div>
+
+          </div>
 
         </section>
 
-    </div>
+      </div>
 
-</main>
+    </main>
 
-<!-- CUSTOMER MODAL -->
+  </div>
 
-<div class="modal" id="customerModal">
+
+
+  <!-- ================= CUSTOMER MODAL ================= -->
+
+  <div class="modal" id="customerModal">
 
     <div class="modal-box">
 
-        <div class="modal-header">
-            <h3>Add Customer</h3>
-            <button class="close" onclick="closeModal('customerModal')">×</button>
+      <div class="modal-header">
+
+        <div>
+          <h3>Add Customer</h3>
+          <p>Enter customer details</p>
         </div>
 
-        <form id="customerForm">
+        <button class="close-btn" data-close="customerModal">
+          ×
+        </button>
 
-            <div class="form-grid">
+      </div>
 
-                <div class="form-group">
-                    <label>Customer Name *</label>
-                    <input id="customerName" required>
-                </div>
 
-                <div class="form-group">
-                    <label>Phone *</label>
-                    <input id="customerPhone" required>
-                </div>
+      <form id="customerForm">
 
-                <div class="form-group">
-                    <label>ID / Document</label>
-                    <input id="customerId">
-                </div>
+        <div class="form-grid">
 
-                <div class="form-group">
-                    <label>Email</label>
-                    <input id="customerEmail" type="email">
-                </div>
+          <div class="form-group">
+            <label>Customer Name *</label>
+            <input id="customerName" required>
+          </div>
 
-                <div class="form-group full">
-                    <label>Address</label>
-                    <input id="customerAddress">
-                </div>
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input id="customerPhone" type="tel" required>
+          </div>
 
-            </div>
+          <div class="form-group">
+            <label>ID / Document</label>
+            <input id="customerDocument">
+          </div>
 
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary"
-                    onclick="closeModal('customerModal')">
-                    Cancel
-                </button>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="customerEmail" type="email">
+          </div>
 
-                <button class="btn btn-primary">
-                    Save Customer
-                </button>
-            </div>
+          <div class="form-group full">
+            <label>Address</label>
+            <textarea id="customerAddress"></textarea>
+          </div>
 
-        </form>
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            data-close="customerModal">
+            Cancel
+          </button>
+
+          <button class="primary-btn" type="submit">
+            Save Customer
+          </button>
+
+        </div>
+
+      </form>
 
     </div>
 
-</div>
+  </div>
 
-<!-- EQUIPMENT MODAL -->
 
-<div class="modal" id="equipmentModal">
+
+  <!-- ================= EQUIPMENT MODAL ================= -->
+
+  <div class="modal" id="equipmentModal">
 
     <div class="modal-box">
 
-        <div class="modal-header">
-            <h3>Add Equipment</h3>
-            <button class="close" onclick="closeModal('equipmentModal')">×</button>
+      <div class="modal-header">
+
+        <div>
+          <h3>Add Equipment</h3>
+          <p>Add rental item to inventory</p>
         </div>
 
-        <form id="equ
+        <button class="close-btn" data-close="equipmentModal">
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="equipmentForm">
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Equipment Name *</label>
+            <input
+              id="equipmentName"
+              placeholder="Sony A7 III"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+
+            <label>Category *</label>
+
+            <select id="equipmentCategory" required>
+
+              <option value="Camera">Camera</option>
+              <option value="Lens">Lens</option>
+              <option value="Mic">Mic</option>
+              <option value="Light">Light</option>
+              <option value="Tripod">Tripod</option>
+              <option value="Gimbal">Gimbal</option>
+              <option value="Accessory">Accessory</option>
+              <option value="Other">Other</option>
+
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Total Quantity *</label>
+
+            <input
+              id="equipmentQuantity"
+              type="number"
+              min="1"
+              value="1"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Rent Per Day (₹) *</label>
+
+            <input
+              id="equipmentRent"
+              type="number"
+              min="0"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Serial Number</label>
+
+            <input id="equipmentSerial">
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Brand</label>
+
+            <input
+              id="equipmentBrand"
+              placeholder="Sony / Canon / DJI..."
+            >
+
+          </div>
+
+
+          <div class="form-group full">
+
+            <label>Notes</label>
+
+            <textarea id="equipmentNotes"></textarea>
+
+          </div>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            data-close="equipmentModal">
+            Cancel
+          </button>
+
+          <button class="primary-btn" type="submit">
+            Save Equipment
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- ================= RENTAL MODAL ================= -->
+
+  <div class="modal" id="rentalModal">
+
+    <div class="modal-box large-modal">
+
+      <div class="modal-header">
+
+        <div>
+          <h3>New Rental</h3>
+          <p>Issue equipment to a customer</p>
+        </div>
+
+        <button class="close-btn" data-close="rentalModal">
+          ×
+        </button>
+
+      </div>
+
+
+      <form id="rentalForm">
+
+        <div class="form-grid">
+
+          <div class="form-group">
+
+            <label>Customer *</label>
+
+            <select id="rentalCustomer" required>
+              <option value="">Select Customer</option>
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Equipment *</label>
+
+            <select id="rentalEquipment" required>
+              <option value="">Select Equipment</option>
+            </select>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Quantity *</label>
+
+            <input
+              id="rentalQuantity"
+              type="number"
+              min="1"
+              value="1"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Rent / Day</label>
+
+            <input
+              id="rentalRate"
+              type="number"
+              readonly
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Issue Date *</label>
+
+            <input
+              id="rentalIssueDate"
+              type="date"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Expected Return *</label>
+
+            <input
+              id="rentalReturnDate"
+              type="date"
+              required
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Advance / Paid (₹)</label>
+
+            <input
+              id="rentalPaid"
+              type="number"
+              min="0"
+              value="0"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>Total Rent</label>
+
+            <input
+              id="rentalTotal"
+              type="number"
+              readonly
+            >
+
+          </div>
+
+
+          <div class="form-group full">
+
+            <label>Notes</label>
+
+            <textarea id="rentalNotes"></textarea>
+
+          </div>
+
+        </div>
+
+
+        <div class="rental-summary">
+
+          <div>
+            <span>Total</span>
+            <strong id="rentalSummaryTotal">₹0</strong>
+          </div>
+
+          <div>
+            <span>Paid</span>
+            <strong id="rentalSummaryPaid">₹0</strong>
+          </div>
+
+          <div>
+            <span>Balance</span>
+            <strong id="rentalSummaryBalance">₹0</strong>
+          </div>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+          <button
+            type="button"
+            class="secondary-btn"
+            data-close="rentalModal">
+            Cancel
+          </button>
+
+          <button class="primary-btn" type="submit">
+            Create Rental
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- JAVASCRIPT -->
+
+  <script src="app.js"></script>
+
+</body>
+</html>
